@@ -638,12 +638,6 @@ class APIProviderSelectorNode:
         providers = sorted(list(PROVIDER_MODELS.keys()))
         default_provider = "openai"
         
-        # Consolidate all models into one list for backend validation
-        all_models = []
-        for model_list in PROVIDER_MODELS.values():
-            all_models.extend(model_list)
-        all_models = sorted(list(set(all_models)))
-
         default_models = PROVIDER_MODELS.get(default_provider, ["No models"])
         
         return {
@@ -652,7 +646,9 @@ class APIProviderSelectorNode:
                     "default": default_provider,
                     "tooltip": "Select the API provider"
                 }),
-                "llm_model": (all_models, {
+                # Use STRING (not combo) so dynamically fetched models are accepted
+                # The JS side provides the dropdown UI via options.values
+                "llm_model": ("STRING", {
                     "default": default_models[0] if default_models else "No models",
                     "tooltip": "Select the model (updates when provider changes)"
                 }),

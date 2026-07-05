@@ -552,6 +552,12 @@ app.registerExtension({
             return;
         }
         
+        // The Python side changed llm_model to STRING type so dynamically fetched
+        // models are accepted by ComfyUI validation. Override to combo for dropdown UI.
+        if (modelWidget.type !== "combo") {
+            modelWidget.type = "combo";
+        }
+        
         // Function to update model list based on provider
         const updateModelList = (provider) => {
             // Skip if graph is loading to prevent freezes
@@ -650,8 +656,8 @@ app.registerExtension({
             updateLLMModels();
         };
         
-        // Initial model fetch
-        // updateLLMModels();
+        // Initial model fetch on node creation
+        setTimeout(() => updateLLMModels(), 100);
         }
     },
     
@@ -662,15 +668,38 @@ app.registerExtension({
         const modelWidget = node.widgets?.find(w => w.name === "llm_model");
         
         if (providerWidget && modelWidget) {
-            const models = PROVIDER_MODELS[providerWidget.value] || ["No models available"];
+            // Preserve the saved model value – do NOT reset even if it's not in
+            // the hardcoded list, because the API fetch (triggered below) will
+            // provide the correct list shortly.
+            const models = PROVIDER_MODELS[providerWidget.value] || [];
             modelWidget.options.values = models;
             
-            // Ensure saved model is still valid
-            if (!models.includes(modelWidget.value)) {
-                modelWidget.value = models[0];
-            }
-            
             console.log(`APIProviderSelector: Restored ${providerWidget.value} with model ${modelWidget.value}`);
+            
+            // Fetch fresh models from the API so dynamically-added models are recognized
+            setTimeout(async () => {
+                try {
+                    const resp = await fetch('/ComfyLLMToolkit/get_provider_models', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            provider: providerWidget.value,
+                            external_api_key: ""
+                        }),
+                    });
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        if (data.models && data.models.length > 0) {
+                            PROVIDER_MODELS[providerWidget.value] = data.models;
+                            modelWidget.options.values = data.models;
+                            node.setDirtyCanvas(true);
+                            console.log(`APIProviderSelector: Loaded ${data.models.length} models for ${providerWidget.value}`);
+                        }
+                    }
+                } catch (e) {
+                    console.warn("APIProviderSelector: background fetch failed on graph load", e);
+                }
+            }, 200);
             }
         }
     }
