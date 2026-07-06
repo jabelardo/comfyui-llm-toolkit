@@ -22,7 +22,7 @@ class APIKeyInput:
     """
     
     SUPPORTED_PROVIDERS = [
-        "openai", "gemini", "google", "anthropic", "groq", "huggingface", 
+        "openai", "openrouter", "gemini", "google", "anthropic", "groq", "huggingface", 
         "bfl", "wavespeed", "ollama", "lmstudio", "textgen", "kobold", 
         "llamacpp", "vllm", "transformers", "custom"
     ]

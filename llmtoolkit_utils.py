@@ -1451,6 +1451,42 @@ def get_models(engine, base_ip, port, api_key):
                     print(f"Response content: {resp.text}")
             return []
 
+    elif engine == "openrouter":
+        # OpenRouter has a public models endpoint that does not require an API key.
+        fallback_models = [
+            # Most popular models on OpenRouter
+            "openai/gpt-4o", "openai/gpt-4o-mini", "openai/gpt-4.1",
+            "openai/o3-mini", "openai/o3", "openai/gpt-5",
+            "anthropic/claude-3.5-sonnet", "anthropic/claude-3.7-sonnet",
+            "anthropic/claude-sonnet-4", "anthropic/claude-opus-4",
+            "google/gemini-2.0-flash-001", "google/gemini-2.5-flash",
+            "google/gemini-2.5-pro",
+            "deepseek/deepseek-chat", "deepseek/deepseek-r1",
+            "meta-llama/llama-3.3-70b-instruct", "meta-llama/llama-4-maverick",
+            "mistralai/mistral-large", "mistralai/mistral-small-3.1-24b-instruct",
+            "qwen/qwen-plus", "qwen/qwq-32b",
+            "x-ai/grok-2-1212", "x-ai/grok-3",
+            "cohere/command-r-plus",
+            "openrouter/auto",
+        ]
+
+        try:
+            api_url = "https://openrouter.ai/api/v1/models"
+            response = requests.get(api_url, timeout=10)
+            if response.status_code != 200:
+                print(f"Failed to fetch models from OpenRouter: HTTP {response.status_code}")
+                return fallback_models
+            data = response.json()
+            # OpenRouter returns {"data": [{"id": "..."}, ...]}
+            models = [m["id"] for m in data.get("data", []) if m.get("id")]
+            if models:
+                print(f"Successfully fetched {len(models)} models from OpenRouter API")
+                return models
+            return fallback_models
+        except Exception as e:
+            print(f"Failed to fetch models from OpenRouter: {e}")
+            return fallback_models
+
     else:
         print(f"Unsupported engine - {engine}")
         return []

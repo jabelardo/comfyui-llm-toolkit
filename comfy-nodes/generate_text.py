@@ -781,6 +781,19 @@ class LLMToolkitTextGenerator:
             except Exception as e:
                 logger.warning("Failed to process video file paths for frame extraction: %s", e, exc_info=True)
 
+            # Safety normalization: user_message must be a plain string, not a dict
+            if not isinstance(params["user_message"], str):
+                if isinstance(params["user_message"], dict):
+                    # Try to extract text from prompt_config.text
+                    inner = params["user_message"].get("prompt_config", {}) or {}
+                    if isinstance(inner, dict) and inner.get("text"):
+                        params["user_message"] = inner["text"]
+                    else:
+                        # Last resort: stringify
+                        params["user_message"] = json.dumps(params["user_message"])
+                elif params["user_message"] is not None:
+                    params["user_message"] = str(params["user_message"])
+
             log_params = _sanitize_params_for_log(params)
             logger.info(f"[Non-Streaming] Making LLM request with params: {log_params}")
 
@@ -1092,6 +1105,19 @@ class LLMToolkitTextGeneratorStream:
                         e,
                         exc_info=True,
                     )
+
+                # Safety normalization: user_message must be a plain string, not a dict
+                if not isinstance(params["user_message"], str):
+                    if isinstance(params["user_message"], dict):
+                        # Try to extract text from prompt_config.text
+                        inner = params["user_message"].get("prompt_config", {}) or {}
+                        if isinstance(inner, dict) and inner.get("text"):
+                            params["user_message"] = inner["text"]
+                        else:
+                            # Last resort: stringify
+                            params["user_message"] = json.dumps(params["user_message"])
+                    elif params["user_message"] is not None:
+                        params["user_message"] = str(params["user_message"])
 
                 log_params = _sanitize_params_for_log(params)
                 logger.info(

@@ -131,13 +131,14 @@ async def send_openrouter_request(
             async with session.post(
                 api_url, headers=headers, json=payload
             ) as response:
+                # Capture body BEFORE raise_for_status so we can log it
+                body = await response.text()
                 response.raise_for_status()
-                return await response.json()
+                return body
     except aiohttp.ClientResponseError as e:
         logger.error(f"HTTP error from OpenRouter API: {e.status} {e.message}")
-        error_body = await response.text()
-        logger.error(f"Error body: {error_body}")
-        return {"error": f"HTTP error: {e.status} {e.message}. Body: {error_body}"}
+        logger.error(f"Error body: {body}")
+        return {"error": f"HTTP error: {e.status} {e.message}. Body: {body}"}
     except Exception as e:
         logger.error(f"Error during OpenRouter API call: {e}", exc_info=True)
         return {"error": str(e)}

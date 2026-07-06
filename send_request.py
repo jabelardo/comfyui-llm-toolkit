@@ -455,13 +455,16 @@ async def send_request(
         #  OpenRouter (OpenAI-compatible)
         # ------------------------------------------------------------------
         if llm_provider == "openrouter":
+            # Ensure user_message and system_message are plain strings
+            _safe_sys = system_message if isinstance(system_message, str) else str(system_message) if system_message is not None else ""
+            _safe_user = user_message if isinstance(user_message, str) else str(user_message) if user_message is not None else ""
             return await send_openrouter_request(
                 api_url="https://openrouter.ai/api/v1/chat/completions",
                 model=llm_model,
                 messages=messages
                 or [
-                    {"role": "system", "content": system_message},
-                    {"role": "user", "content": user_message},
+                    {"role": "system", "content": _safe_sys},
+                    {"role": "user", "content": _safe_user},
                 ],
                 api_key=llm_api_key or "",
                 temperature=temperature,
